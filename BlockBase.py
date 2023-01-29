@@ -8,6 +8,9 @@ class BlockBase(pygame.Rect):
         super().__init__(left, top, width, height)
 
     def process_collision(self, ball: Ball):
+        if not ball.colliderect(self):
+            return
+
         # distance_x - distance between the ball and horizontally hit block
         if ball.direction_x > 0:  # the ball is heading ->
             # distance between right side of the ball and left side of the block
@@ -24,7 +27,7 @@ class BlockBase(pygame.Rect):
             # distance between the ball top and the block bottom
             distance_y = self.bottom - ball.top
 
-        if abs(distance_x) <= ball.speed and abs(distance_y) <= ball.speed:  # both distances are small
+        if abs(distance_x) <= ball.radius and abs(distance_y) <= ball.radius:  # both distances are small
             # the ball will hit corner of the block => need to flip both directions
             ball.direction_x, ball.direction_y = -ball.direction_x, -ball.direction_y
         elif distance_x > distance_y:  # horizontal distance a bigger
