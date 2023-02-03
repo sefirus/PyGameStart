@@ -7,44 +7,58 @@ from Paddle import Paddle
 
 class Game:
     SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 800
-    FPS = 60
+    FPS = 120
+
+    def normalize_input(self):
+        if int(self.args.difficulty) > 3 or int(self.args.difficulty) < 0:
+            self.args.difficulty_delta = 1
+
+    def adjust_difficulty(self):
+        self.normalize_input()
+        if int(self.args.difficulty) == 1:
+            self.args.paddle_width = 330
+            self.diff = 0.2
+        elif int(self.args.difficulty) == 2:
+            self.args.paddle_width = 270
+            self.diff = 0.5
+        else:
+            self.args.paddle_width = 240
+            self.diff = 0.7
 
     def __init__(self, args):
         self.args = args
-
-    @staticmethod
-    def process_bounds_collisions(ball: Ball):
-        if ball.centerx < ball.radius or ball.centerx > Game.SCREEN_WIDTH - ball.radius:
-            ball.direction_x = -ball.direction_x
-        if ball.centery < ball.radius:
-            ball.direction_y = -ball.direction_y
-
-    @staticmethod
-    def process_blocks_collisions(ball: Ball, paddle: Paddle, blocks: list[Block], diff: float):
-        if ball.colliderect(paddle) and ball.direction_y > 0:
-            paddle.process_collision(ball)
-
-        hit_index = ball.collidelist(blocks)
-        if hit_index != -1:
-            hit_rect = blocks.pop(hit_index)
-            hit_rect.process_collision(ball)
-            ball.speed += diff
-            paddle.speed += 3 * diff
-
-    def run(self):
+        self.adjust_difficulty()
         # paddle settings
         paddle_w = int(self.args.paddle_width)
         paddle_h = int(self.args.paddle_height)
-        paddle_speed = float(self.args.paddle_speed)
-        paddle = Paddle(paddle_w, paddle_h, paddle_speed, Game.SCREEN_HEIGHT, Game.SCREEN_WIDTH)
+        self.paddle_speed = float(self.args.paddle_speed)
+        self.paddle = Paddle(paddle_w, paddle_h, self.paddle_speed, Game.SCREEN_HEIGHT, Game.SCREEN_WIDTH)
         # ball settings
         ball_radius = int(self.args.ball_radius)
         ball_speed = int(self.args.ball_speed)
-        diff = float(self.args.difficulty_delta)
-        ball = Ball(ball_radius, ball_speed, Game.SCREEN_HEIGHT, Game.SCREEN_WIDTH)
+        self.ball = Ball(ball_radius, ball_speed, Game.SCREEN_HEIGHT, Game.SCREEN_WIDTH)
         # blocks settings
-        block_list = [Block(i, j) for i in range(7) for j in range(4)]
+        self.block_list = [Block(i, j) for i in range(7) for j in range(4)]
 
+    def process_bounds_collisions(self):
+        if self.ball.centerx < self.ball.radius - self.ball.speed \
+                or self.ball.centerx > Game.SCREEN_WIDTH - self.ball.radius + self.ball.speed:
+            self.ball.direction_x = -self.ball.direction_x
+        if self.ball.centery < self.ball.radius - self.ball.speed:
+            self.ball.direction_y = -self.ball.direction_y
+
+    def process_blocks_collisions(self):
+        if self.ball.colliderect(self.paddle) and self.ball.direction_y > 0:
+            self.paddle.process_collision(self.ball)
+
+        hit_index = self.ball.collidelist(self.block_list)
+        if hit_index != -1:
+            hit_rect = self.block_list.pop(hit_index)
+            hit_rect.process_collision(self.ball)
+            self.ball.speed += self.diff
+            self.paddle.speed += 3 * self.diff
+
+    def run(self):
         pygame.init()
         sc = pygame.display.set_mode((Game.SCREEN_WIDTH, Game.SCREEN_HEIGHT))
         clock = pygame.time.Clock()
@@ -55,29 +69,29 @@ class Game:
                     exit()
             sc.fill((0, 0, 0))
             # drawing blocks
-            [pygame.draw.rect(sc, block.color, block) for color, block in enumerate(block_list)]
-            pygame.draw.rect(sc, pygame.Color('orange'), paddle)
-            pygame.draw.circle(sc, pygame.Color('white'), ball.center, ball_radius)
+            [pygame.draw.rect(sc, block.color, block) for color, block in enumerate(self.block_list)]
+            pygame.draw.rect(sc, pygame.Color('orange'), self.paddle)
+            pygame.draw.circle(sc, pygame.Color('white'), self.ball.center, self.ball.radius)
             # ball movement
-            ball.x += ball_speed * ball.direction_x
-            ball.y += ball_speed * ball.direction_y
+            self.ball.x += self.ball.speed * self.ball.direction_x
+            self.ball.y += self.ball.speed * self.ball.direction_y
             # collision with bounds
-            Game.process_bounds_collisions(ball)
+            self.process_bounds_collisions()
             # collision with blocks
-            Game.process_blocks_collisions(ball, paddle, block_list, diff)
+            self.process_blocks_collisions()
             # win, game over
-            if ball.bottom > Game.SCREEN_HEIGHT:
+            if self.ball.bottom > Game.SCREEN_HEIGHT:
                 print('Game over!')
                 exit()
-            elif not len(block_list):
+            elif not len(self.block_list):
                 print('Congrats!')
                 exit()
             # control
             key = pygame.key.get_pressed()
-            if key[pygame.K_LEFT] and paddle.left > 0:
-                paddle.left -= paddle_speed
-            if key[pygame.K_RIGHT] and paddle.right < Game.SCREEN_WIDTH:
-                paddle.right += paddle_speed
+            if key[pygame.K_LEFT] and self.paddle.left > 0:
+                self.paddle.left -= self.paddle_speed
+            if key[pygame.K_RIGHT] and self.paddle.right < Game.SCREEN_WIDTH:
+                self.paddle.right += self.paddle_speed
             # update screen
             pygame.display.flip()
             clock.tick(Game.FPS)
