@@ -1,10 +1,9 @@
 import unittest
-from unittest.mock import patch
 from Ball import Ball
 from Paddle import Paddle
 
 
-class test_Block(unittest.TestCase):
+class TestBlock(unittest.TestCase):
     def setUp(self):
         self.ball = Ball(10, 6, 1000, 1000)
         self.ball.x = 495
