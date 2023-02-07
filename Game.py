@@ -9,12 +9,7 @@ class Game:
     SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 800
     FPS = 120
 
-    def normalize_input(self):
-        if int(self.args.difficulty) > 3 or int(self.args.difficulty) < 0:
-            self.args.difficulty_delta = 1
-
     def adjust_difficulty(self):
-        self.normalize_input()
         if int(self.args.difficulty) == 1:
             self.args.paddle_width = 330
             self.diff = 0.2
